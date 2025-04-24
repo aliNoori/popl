@@ -13,6 +13,14 @@ return [
     | a conventional file to locate the various service credentials.
     |
     */
+    'sms' => [
+        'default' => env('SMS_DRIVER', 'modirpayamak'),
+    ],
+    'kavenegar' => [
+        'key' => env('KAVENEGAR_API_KEY'),
+        'sender' => env('KAVENEGAR_SENDER', '10004346'),
+    ],
+
 
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
