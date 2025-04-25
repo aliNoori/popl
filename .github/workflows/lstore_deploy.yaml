@@ -1,0 +1,42 @@
+name: Popl Deploy
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+      - name: Deploy to local server
+        run: |
+          sudo rsync -av --exclude='.git' --exclude='node_modules' --exclude='storage/logs' ./ /var/www/popl.co/public_html/popl
+          sudo chmod -R 750 /var/www/popl.co/public_html/popl
+          sudo chmod -R 770 /var/www/popl.co/public_html/popl/storage /var/www/popl.co/public_html/popl/bootstrap/cache
+          sudo chown -R www-data:www-data /var/www/popl.co/public_html/popl
+      - name: Cache configuration
+        run: |
+              cd /var/www/popl.co/public_html/popl
+              php artisan config:cache
+              php artisan route:cache
+              php artisan view:cache
+      - name: Run migrations
+        run: |
+          cd /var/www/popl.co/public_html/popl
+          php artisan migrate --force
+          php artisan db:seed --force
+
+      - name: Enable site
+        run: |
+           sudo a2dissite nemoonehshow.ir.conf
+           sudo a2ensite nemoonehshow.ir.conf
+           sudo systemctl restart apache2
+      - name: Check application health
+        run: curl -f http://193.105.234.8/health-check
+
