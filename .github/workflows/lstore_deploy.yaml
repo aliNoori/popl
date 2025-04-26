@@ -30,7 +30,7 @@ jobs:
         run: |
           cd /var/www/popl.co/public_html/popl
           php artisan migrate --force
-          php artisan db:seed --force
+          #php artisan db:seed --force
 
       - name: Enable site
         run: |
