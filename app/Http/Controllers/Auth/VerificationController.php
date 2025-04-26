@@ -28,7 +28,7 @@ class VerificationController extends Controller
         //$fullPhone = $request->country . ltrim($request->phone, '0');
         $fullPhone = '0' . ltrim($request->phone, '0');
         // Check if a code was recently sent (within the last 2 minutes)
-        $recent = VerificationCode::where('phone',$fullPhone )
+        $recent = VerificationCode::where('phone', $fullPhone)
             ->where('created_at', '>', now()->subMinutes(2))
             ->exists();
 
@@ -58,15 +58,15 @@ class VerificationController extends Controller
     {
         // Validate request input
         $data = $request->validate([
-            'country'=>'required',
+            'country' => 'required',
             'phone' => 'required',
             'code' => 'required'
         ]);
-        if ($data['country'] === 'IR') {
 
+        // Normalize phone number for Iran
+        if ($data['country'] === 'IR') {
             $data['phone'] = preg_replace('/^\+98/', '0', $data['phone']);
         }
-
 
         // Find a matching, non-expired, pending verification record
         $record = VerificationCode::where('phone', $data['phone'])
@@ -77,30 +77,39 @@ class VerificationController extends Controller
 
         // If no valid code is found, return error
         if (!$record) {
-            return response()->json(['message' => 'Invalid or expired verification code'], 422);
+            return response()->json(['message' => 'کد نامعتبر یا منقضی شده است'], 422);
         }
 
         // Mark the code as verified
         $record->update(['status' => 'verified']);
 
-        // You can authenticate the user here and return a token (e.g. JWT)
-        // Find or create user by phone number
-        $user = User::firstOrCreate(
-            ['phone' => $request->phone],
-            [
-                'name' => 'User ' . $request->phone,
-                'email' => $request->phone . '@example.com',
-                'password' => Hash::make('default_password'),
-            ]
-        );
+        // Check if the user exists by phone number
+        $user = User::where('phone', $data['phone'])->first();
 
-        // Create Sanctum token
+        // If the user already exists, return a conflict status
+        if ($user) {
+            return response()->json([
+                'message' => 'کاربر از قبل وجود دارد',
+                'user' => $user,
+            ], 200);
+        }
+
+        // Create a new user if not found
+        $user = User::create([
+            'phone' => $data['phone'],
+            'name' => 'User ' . $data['phone'],
+            'email' => $data['phone'] . '@example.com',
+            'password' => Hash::make('default_password'),
+        ]);
+
+        // Generate a Sanctum token for the new user
         $token = $user->createToken('authToken')->plainTextToken;
 
+        // Return a success response with the new user and token
         return response()->json([
-            'message' => 'Verification successful',
+            'message' => 'کاربر جدید با موفقیت ایجاد شد',
             'token' => $token,
             'user' => $user,
-        ]);
+        ], 201);
     }
 }
