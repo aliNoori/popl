@@ -16,21 +16,23 @@ class ModirPayamakService implements SmsServiceInterface
     public function send(string $phone, string $message): bool
     {
         // API endpoint
-        $url = 'https://api.ippanel.com/v1/messages/send';
+        $url = 'https://api2.ippanel.com/api/v1/sms/pattern/normal/send';
 
         // Payload for the API request
         $payload = [
-            'username' => env('SMS_USERNAME'),   // Your SMS service username
-            'password' => env('SMS_PASSWORD'),   // Your SMS service password
-            'access_key' => env('SMS_ACCESS_KEY'), // Your access key
-            'to' => $phone,                      // Destination phone number
-            'message' => $message,               // Message to send
-            'pattern_code' => env('SMS_PATTERN_CODE') // Pattern code (if any)
+            'code' => env('SMS_PATTERN_CODE'),   // Pattern code
+            'sender' => env('SMS_SENDER'),       // Sender number
+            'recipient' => $phone,              // Destination phone number
+            'variable' => [                     // Variables for pattern
+                'verification-code' => $message // Dynamic data within pattern
+            ]
         ];
 
         try {
-            // Send POST request to SMS service
-            $response = Http::post($url, $payload);
+            // Send POST request to SMS service with Basic Auth
+            $response = Http::withBasicAuth(env('SMS_USERNAME'), env('SMS_PASSWORD'))
+                ->asJson()
+                ->post($url, $payload);
 
             // Check if the response indicates success
             if ($response->successful()) {

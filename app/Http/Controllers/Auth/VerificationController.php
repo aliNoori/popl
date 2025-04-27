@@ -26,7 +26,8 @@ class VerificationController extends Controller
         ]);
 
         //$fullPhone = $request->country . ltrim($request->phone, '0');
-        $fullPhone = '0' . ltrim($request->phone, '0');
+        //$fullPhone = '0' . ltrim($request->phone, '0');
+        $fullPhone=$request->phone;
         // Check if a code was recently sent (within the last 2 minutes)
         $recent = VerificationCode::where('phone', $fullPhone)
             ->where('created_at', '>', now()->subMinutes(2))
@@ -46,7 +47,7 @@ class VerificationController extends Controller
             'expires_at' => now()->addMinutes(2), // Code expires after 2 minutes
         ]);
         // Send the verification code via SMS
-        $sms->send($fullPhone, "کد تایید شما: {$code}");
+        $sms->send($fullPhone, "{$code}");
 
         return response()->json(['message' => 'کد ارسال شد']);
     }
@@ -88,9 +89,12 @@ class VerificationController extends Controller
 
         // If the user already exists, return a conflict status
         if ($user) {
+            // Generate a Sanctum token for the new user
+            $token = $user->createToken('authToken')->plainTextToken;
             return response()->json([
                 'message' => 'کاربر از قبل وجود دارد',
                 'user' => $user,
+                'token' => $token,
             ], 200);
         }
 
