@@ -27,9 +27,10 @@ class VerificationController extends Controller
 
         //$fullPhone = $request->country . ltrim($request->phone, '0');
         //$fullPhone = '0' . ltrim($request->phone, '0');
-        $fullPhone=$request->phone;
+        $fullPhone=$request->country.$request->phone;
+        $processedPhone = ltrim($fullPhone, '+');
         // Check if a code was recently sent (within the last 2 minutes)
-        $recent = VerificationCode::where('phone', $fullPhone)
+        $recent = VerificationCode::where('phone', $processedPhone)
             ->where('created_at', '>', now()->subMinutes(2))
             ->exists();
 
@@ -65,12 +66,13 @@ class VerificationController extends Controller
         ]);
 
         // Normalize phone number for Iran
-        if ($data['country'] === 'IR') {
+        /*if ($data['country'] === 'IR') {
             $data['phone'] = preg_replace('/^\+98/', '0', $data['phone']);
-        }
-
+        }*/
+        $fullPhone=$data['country'].$data['phone'];
+        $processedPhone = ltrim($fullPhone, '+');
         // Find a matching, non-expired, pending verification record
-        $record = VerificationCode::where('phone', $data['phone'])
+        $record = VerificationCode::where('phone', $processedPhone)
             ->where('code', $data['code'])
             ->where('expires_at', '>', now())
             ->where('status', 'pending')
@@ -85,7 +87,7 @@ class VerificationController extends Controller
         $record->update(['status' => 'verified']);
 
         // Check if the user exists by phone number
-        $user = User::where('phone', $data['phone'])->first();
+        $user = User::where('phone', $processedPhone)->first();
 
         // If the user already exists, return a conflict status
         if ($user) {
@@ -100,8 +102,8 @@ class VerificationController extends Controller
 
         // Create a new user if not found
         $user = User::create([
-            'phone' => $data['phone'],
-            'name' => 'User ' . $data['phone'],
+            'phone' => $processedPhone,
+            'name' => 'User ' . $processedPhone,
             'email' => $data['phone'] . '@example.com',
             'password' => Hash::make('default_password'),
         ]);
