@@ -9,6 +9,7 @@ use App\Models\VerificationCode;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class VerificationController extends Controller
 {
@@ -71,6 +72,7 @@ class VerificationController extends Controller
         }*/
         $fullPhone=$data['country'].$data['phone'];
         $processedPhone = ltrim($fullPhone, '+');
+        Log::info('wee',[$processedPhone,$data['code']]);
         // Find a matching, non-expired, pending verification record
         $record = VerificationCode::where('phone', $processedPhone)
             ->where('code', $data['code'])
