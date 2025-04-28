@@ -70,8 +70,7 @@ class VerificationController extends Controller
         /*if ($data['country'] === 'IR') {
             $data['phone'] = preg_replace('/^\+98/', '0', $data['phone']);
         }*/
-        $fullPhone=$data['country'].$data['phone'];
-        $processedPhone = ltrim($fullPhone, '+');
+        $processedPhone = ltrim($data['phone'], '+');
         Log::info('wee',[$processedPhone,$data['code']]);
         // Find a matching, non-expired, pending verification record
         $record = VerificationCode::where('phone', $processedPhone)
