@@ -43,7 +43,7 @@ class VerificationController extends Controller
 
         // Store the verification code in the database
         VerificationCode::create([
-            'phone' => $fullPhone,
+            'phone' => $processedPhone,
             'code' => $code,
             'expires_at' => now()->addMinutes(2), // Code expires after 2 minutes
         ]);
